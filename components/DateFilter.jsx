@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 const filterOptions = [
   { value: "all", label: "All Time" },
@@ -21,17 +23,23 @@ export default function DateFilter({ currentFilter = "all" }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+  const [activeFilter, setActiveFilter] = useState(currentFilter);
 
   const handleFilterChange = (newFilter) => {
-    const params = new URLSearchParams(searchParams);
+    setActiveFilter(newFilter);
 
-    if (newFilter === "all") {
-      params.delete("filter");
-    } else {
-      params.set("filter", newFilter);
-    }
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams);
 
-    router.push(`${pathname}?${params.toString()}`);
+      if (newFilter === "all") {
+        params.delete("filter");
+      } else {
+        params.set("filter", newFilter);
+      }
+
+      router.push(`${pathname}?${params.toString()}`);
+    });
   };
 
   return (
@@ -42,9 +50,16 @@ export default function DateFilter({ currentFilter = "all" }) {
 
       {/* Mobile/Tablet Select Dropdown */}
       <div className="sm:hidden w-full">
-        <Select value={currentFilter} onValueChange={handleFilterChange}>
+        <Select
+          value={activeFilter}
+          onValueChange={handleFilterChange}
+          disabled={isPending}
+        >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select time period" />
+            <div className="flex items-center gap-2">
+              {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              <SelectValue placeholder="Select time period" />
+            </div>
           </SelectTrigger>
           <SelectContent>
             {filterOptions.map((option) => (
@@ -57,18 +72,29 @@ export default function DateFilter({ currentFilter = "all" }) {
       </div>
 
       {/* Desktop Button Group */}
-      <div className="hidden sm:flex gap-2">
+      <div className="hidden sm:flex gap-2 items-center">
         {filterOptions.map((option) => (
           <Button
             key={option.value}
-            variant={currentFilter === option.value ? "default" : "outline"}
+            variant={activeFilter === option.value ? "default" : "outline"}
             size="sm"
             onClick={() => handleFilterChange(option.value)}
-            className="text-xs"
+            disabled={isPending}
+            className="text-xs transition-all duration-200"
           >
+            {isPending && activeFilter === option.value && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             {option.label}
           </Button>
         ))}
+
+        {isPending && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Updating...</span>
+          </div>
+        )}
       </div>
     </div>
   );

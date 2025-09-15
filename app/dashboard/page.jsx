@@ -21,6 +21,7 @@ import DeleteExpenseButton from "@/components/DeleteExpenseButton";
 import DateFilter from "@/components/DateFilter";
 import ExpenseChart from "@/components/ExpenseChart";
 import { CalendarDays, TrendingUp, Wallet, Target } from "lucide-react";
+import { Suspense } from "react";
 
 // Helper function to get date range based on filter
 function getDateRange(filter) {
@@ -134,7 +135,67 @@ function calculateStats(expenses, dateFilter) {
   };
 }
 
-export default async function Dashboard({ searchParams }) {
+// Loading skeleton components
+function StatCardSkeleton() {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+            <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+            <div className="h-8 w-24 bg-muted animate-pulse rounded" />
+          </div>
+          <div className="h-8 w-8 bg-muted animate-pulse rounded" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Date</TableHead>
+          <TableHead>Description</TableHead>
+          <TableHead>Category</TableHead>
+          <TableHead className="text-right">Amount</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {[...Array(5)].map((_, i) => (
+          <TableRow key={i}>
+            <TableCell>
+              <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+            </TableCell>
+            <TableCell>
+              <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+            </TableCell>
+            <TableCell>
+              <div className="h-6 w-16 bg-muted animate-pulse rounded" />
+            </TableCell>
+            <TableCell className="text-right">
+              <div className="h-4 w-16 bg-muted animate-pulse rounded ml-auto" />
+            </TableCell>
+            <TableCell className="text-right">
+              <div className="h-8 w-8 bg-muted animate-pulse rounded ml-auto" />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+function ChartSkeleton() {
+  return <div className="h-[300px] w-full bg-muted animate-pulse rounded" />;
+}
+
+// Main dashboard content component
+async function DashboardContent({ searchParams }) {
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.getUser();
@@ -232,7 +293,7 @@ export default async function Dashboard({ searchParams }) {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -492,6 +553,117 @@ export default async function Dashboard({ searchParams }) {
           )}
         </CardContent>
       </Card>
+    </>
+  );
+}
+
+// Main dashboard with loading states
+export default function Dashboard({ searchParams }) {
+  return (
+    <div className="container mx-auto p-6 space-y-8">
+      <Suspense
+        fallback={
+          <div className="space-y-8">
+            {/* Header Skeleton */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-8 w-32 bg-muted animate-pulse rounded mb-2" />
+                <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+              </div>
+            </div>
+
+            {/* Filter Skeleton */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+              {/* Mobile Select Skeleton */}
+              <div className="sm:hidden w-full">
+                <div className="h-10 w-full bg-muted animate-pulse rounded" />
+              </div>
+              {/* Desktop Buttons Skeleton */}
+              <div className="hidden sm:flex gap-2">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-8 w-20 bg-muted animate-pulse rounded"
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Stats Cards Skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <StatCardSkeleton key={i} />
+              ))}
+            </div>
+
+            {/* Charts Skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <div className="h-6 w-40 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                </CardHeader>
+                <CardContent>
+                  <ChartSkeleton />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <div className="h-6 w-36 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-28 bg-muted animate-pulse rounded" />
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 bg-muted animate-pulse rounded-full" />
+                          <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                        </div>
+                        <div className="text-right">
+                          <div className="h-4 w-16 bg-muted animate-pulse rounded mb-1" />
+                          <div className="h-3 w-8 bg-muted animate-pulse rounded" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Stats Skeleton */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex flex-wrap gap-8">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i}>
+                      <div className="h-4 w-20 bg-muted animate-pulse rounded mb-1" />
+                      <div className="h-5 w-16 bg-muted animate-pulse rounded" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Table Skeleton */}
+            <Card>
+              <CardHeader>
+                <div className="h-6 w-32 bg-muted animate-pulse rounded" />
+                <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+              </CardHeader>
+              <CardContent>
+                <TableSkeleton />
+              </CardContent>
+            </Card>
+          </div>
+        }
+      >
+        <DashboardContent searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }
